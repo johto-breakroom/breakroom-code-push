@@ -30,6 +30,10 @@ import {
 
 const packageJson = require("../../package.json");
 
+import { createClient, PostgrestResponse, PostgrestSingleResponse } from "@supabase/supabase-js";
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {});
+
 interface JsonResponse {
   headers: Headers;
   body?: any;
@@ -73,7 +77,7 @@ class AccountManager {
   private _customHeaders: Headers;
 
   constructor(accessKey: string, customHeaders?: Headers, serverUrl?: string) {
-    if (!accessKey) throw new Error("An access key must be specified.");
+    // if (!accessKey) throw new Error("An access key must be specified.");
 
     this._accessKey = accessKey;
     this._customHeaders = customHeaders;
@@ -86,28 +90,35 @@ class AccountManager {
 
   public isAuthenticated(throwIfUnauthorized?: boolean): Promise<boolean> {
     return Promise<any>((resolve, reject, notify) => {
-      const request: superagent.Request<any> = superagent.get(`${this._serverUrl}${urlEncode(["/authenticated"])}`);
-      this.attachCredentials(request);
+      resolve(true);
+      // const request: superagent.Request<any> = superagent.get(`${this._serverUrl}${urlEncode(["/authenticated"])}`);
+      // this.attachCredentials(request);
 
-      request.end((err: any, res: superagent.Response) => {
-        const status: number = this.getErrorStatus(err, res);
-        if (err && status !== AccountManager.ERROR_UNAUTHORIZED) {
-          reject(this.getCodePushError(err, res));
-          return;
-        }
+      // request.end((err: any, res: superagent.Response) => {
+      //   const status: number = this.getErrorStatus(err, res);
+      //   if (err && status !== AccountManager.ERROR_UNAUTHORIZED) {
+      //     reject(this.getCodePushError(err, res));
+      //     return;
+      //   }
 
-        const authenticated: boolean = status === 200;
+      //   const authenticated: boolean = status === 200;
 
-        if (!authenticated && throwIfUnauthorized) {
-          reject(this.getCodePushError(err, res));
-          return;
-        }
+      //   if (!authenticated && throwIfUnauthorized) {
+      //     reject(this.getCodePushError(err, res));
+      //     return;
+      //   }
 
-        resolve(authenticated);
-      });
+      //   resolve(authenticated);
+      // });
     });
   }
 
+  /**
+   * @deprecated
+   * @param friendlyName
+   * @param ttl
+   * @returns
+   */
   public addAccessKey(friendlyName: string, ttl?: number): Promise<AccessKey> {
     if (!friendlyName) {
       throw new Error("A name must be specified when adding an access key.");
@@ -131,6 +142,11 @@ class AccountManager {
     );
   }
 
+  /**
+   * @deprecated
+   * @param accessKeyName
+   * @returns
+   */
   public getAccessKey(accessKeyName: string): Promise<AccessKey> {
     return this.get(urlEncode([`/accessKeys/${accessKeyName}`])).then((res: JsonResponse) => {
       return {
@@ -141,6 +157,10 @@ class AccountManager {
     });
   }
 
+  /**
+   * @deprecated
+   * @returns
+   */
   public getAccessKeys(): Promise<AccessKey[]> {
     return this.get(urlEncode(["/accessKeys"])).then((res: JsonResponse) => {
       const accessKeys: AccessKey[] = [];
@@ -158,6 +178,10 @@ class AccountManager {
     });
   }
 
+  /**
+   * @deprecated
+   * @returns
+   */
   public getSessions(): Promise<Session[]> {
     return this.get(urlEncode(["/accessKeys"])).then((res: JsonResponse) => {
       // A machine name might be associated with multiple session keys,
@@ -179,6 +203,13 @@ class AccountManager {
     });
   }
 
+  /**
+   * @deprecated
+   * @param oldName
+   * @param newName
+   * @param ttl
+   * @returns
+   */
   public patchAccessKey(oldName: string, newName?: string, ttl?: number): Promise<AccessKey> {
     const accessKeyRequest: AccessKeyRequest = {
       friendlyName: newName,
@@ -194,10 +225,20 @@ class AccountManager {
     });
   }
 
+  /**
+   * @deprecated
+   * @param name
+   * @returns
+   */
   public removeAccessKey(name: string): Promise<void> {
     return this.del(urlEncode([`/accessKeys/${name}`])).then(() => null);
   }
 
+  /**
+   * @deprecated
+   * @param machineName
+   * @returns
+   */
   public removeSession(machineName: string): Promise<void> {
     return this.del(urlEncode([`/sessions/${machineName}`])).then(() => null);
   }
@@ -209,26 +250,83 @@ class AccountManager {
 
   // Apps
   public getApps(): Promise<App[]> {
-    return this.get(urlEncode(["/apps"])).then((res: JsonResponse) => res.body.apps);
+    return Q(
+      supabase
+        .from("code_push_app")
+        .select(`app_name: name,`)
+        .then((res: PostgrestResponse<{ app_name: string }>) => {
+          return res.data?.map((r) => {
+            return {
+              name: r.app_name,
+            } as App;
+          });
+        })
+    );
   }
 
   public getApp(appName: string): Promise<App> {
-    return this.get(urlEncode([`/apps/${appName}`])).then((res: JsonResponse) => res.body.app);
+    return Q(
+      supabase
+        .from("code_push_app")
+        .select(
+          `
+       app_name: name,
+      `
+        )
+        .eq("app_name", appName)
+        .single()
+        .then(() => {
+          return {
+            name: appName,
+          } as App;
+        })
+    );
   }
 
   public addApp(appName: string): Promise<App> {
-    const app: App = { name: appName };
-    return this.post(urlEncode(["/apps/"]), JSON.stringify(app), /*expectResponseBody=*/ false).then(() => app);
+    return Q(
+      supabase
+        .from("code_push_app")
+        .insert([
+          {
+            app_name: appName,
+          },
+        ])
+        .select()
+        .then((res: PostgrestSingleResponse<{ app_name: string }[]>) => {
+          return {
+            name: res[0].app_name,
+          } as App;
+        })
+    );
   }
 
   public removeApp(appName: string): Promise<void> {
-    return this.del(urlEncode([`/apps/${appName}`])).then(() => null);
+    return Q(
+      supabase
+        .from("code_push_app")
+        .delete()
+        .eq("app_name", appName)
+        .then(() => null)
+    );
   }
 
+  /**
+   * @deprecated
+   * @param oldAppName
+   * @param newAppName
+   * @returns
+   */
   public renameApp(oldAppName: string, newAppName: string): Promise<void> {
     return this.patch(urlEncode([`/apps/${oldAppName}`]), JSON.stringify({ name: newAppName })).then(() => null);
   }
 
+  /**
+   * @deprecated
+   * @param appName
+   * @param email
+   * @returns
+   */
   public transferApp(appName: string, email: string): Promise<void> {
     return this.post(urlEncode([`/apps/${appName}/transfer/${email}`]), /*requestBody=*/ null, /*expectResponseBody=*/ false).then(
       () => null
@@ -240,6 +338,12 @@ class AccountManager {
     return this.get(urlEncode([`/apps/${appName}/collaborators`])).then((res: JsonResponse) => res.body.collaborators);
   }
 
+  /**
+   * @deprecated
+   * @param appName
+   * @param email
+   * @returns
+   */
   public addCollaborator(appName: string, email: string): Promise<void> {
     return this.post(
       urlEncode([`/apps/${appName}/collaborators/${email}`]),
@@ -248,30 +352,89 @@ class AccountManager {
     ).then(() => null);
   }
 
+  /**
+   * @deprecated
+   * @param appName
+   * @param email
+   * @returns
+   */
   public removeCollaborator(appName: string, email: string): Promise<void> {
     return this.del(urlEncode([`/apps/${appName}/collaborators/${email}`])).then(() => null);
   }
 
   // Deployments
   public addDeployment(appName: string, deploymentName: string, deploymentKey?: string): Promise<Deployment> {
-    const deployment = <Deployment>{ name: deploymentName, key: deploymentKey };
-    return this.post(urlEncode([`/apps/${appName}/deployments/`]), JSON.stringify(deployment), /*expectResponseBody=*/ true).then(
-      (res: JsonResponse) => res.body.deployment
-    );
+    // get app
+    return this.getApp(appName).then((app) => {
+      return Q(
+        supabase
+          .from("code_push_deployments")
+          .insert([
+            {
+              app_name: app.name,
+              name: deploymentName,
+              key: deploymentKey,
+            },
+          ])
+          .select()
+          .then((res) => {
+            return {
+              name: deploymentName,
+              key: deploymentKey,
+            } as Deployment;
+          })
+      );
+    });
   }
 
+  /**
+   * @deprecated
+   * @param appName
+   * @param deploymentName
+   * @returns
+   */
   public clearDeploymentHistory(appName: string, deploymentName: string): Promise<void> {
     return this.del(urlEncode([`/apps/${appName}/deployments/${deploymentName}/history`])).then(() => null);
   }
 
   public getDeployments(appName: string): Promise<Deployment[]> {
-    return this.get(urlEncode([`/apps/${appName}/deployments/`])).then((res: JsonResponse) => res.body.deployments);
+    return Q(
+      supabase
+        .from("code_push_deployments")
+        .select(`app_name,name,key`)
+        .eq("app_name", appName)
+        .then((res: PostgrestResponse<{ name: string; key: string }>) => {
+          return res.data?.map((r) => {
+            return {
+              name: r.name,
+              key: r.key,
+            } as Deployment;
+          });
+        })
+    );
   }
 
   public getDeployment(appName: string, deploymentName: string): Promise<Deployment> {
-    return this.get(urlEncode([`/apps/${appName}/deployments/${deploymentName}`])).then((res: JsonResponse) => res.body.deployment);
+    return Q(
+      supabase
+        .from("code_push_app")
+        .select(`name, key`)
+        .eq("app_name", appName)
+        .eq("name", deploymentName)
+        .single()
+        .then((res: PostgrestSingleResponse<{ name: string; key: string }>) => {
+          return res.data as Deployment;
+        })
+    );
   }
 
+  /**
+   * @deprecated
+   * @param appName
+   * @param oldDeploymentName
+   * @param newDeploymentName
+   * @returns
+   */
   public renameDeployment(appName: string, oldDeploymentName: string, newDeploymentName: string): Promise<void> {
     return this.patch(
       urlEncode([`/apps/${appName}/deployments/${oldDeploymentName}`]),
@@ -279,16 +442,34 @@ class AccountManager {
     ).then(() => null);
   }
 
+  /**
+   * @deprecated
+   * @param appName
+   * @param deploymentName
+   * @returns
+   */
   public removeDeployment(appName: string, deploymentName: string): Promise<void> {
     return this.del(urlEncode([`/apps/${appName}/deployments/${deploymentName}`])).then(() => null);
   }
 
+  /**
+   * @deprecated
+   * @param appName
+   * @param deploymentName
+   * @returns
+   */
   public getDeploymentMetrics(appName: string, deploymentName: string): Promise<DeploymentMetrics> {
     return this.get(urlEncode([`/apps/${appName}/deployments/${deploymentName}/metrics`])).then(
       (res: JsonResponse) => res.body.metrics
     );
   }
 
+  /**
+   * @deprecated
+   * @param appName
+   * @param deploymentName
+   * @returns
+   */
   public getDeploymentHistory(appName: string, deploymentName: string): Promise<Package[]> {
     return this.get(urlEncode([`/apps/${appName}/deployments/${deploymentName}/history`])).then(
       (res: JsonResponse) => res.body.history
@@ -305,11 +486,6 @@ class AccountManager {
   ): Promise<void> {
     return Promise<void>((resolve, reject, notify) => {
       updateMetadata.appVersion = targetBinaryVersion;
-      const request: superagent.Request<any> = superagent.post(
-        this._serverUrl + urlEncode([`/apps/${appName}/deployments/${deploymentName}/release`])
-      );
-
-      this.attachCredentials(request);
 
       const getPackageFilePromise = Q.Promise((resolve, reject) => {
         this.packageFileFromPath(filePath)
@@ -322,51 +498,55 @@ class AccountManager {
       });
 
       getPackageFilePromise.then((packageFile: PackageFile) => {
+        // upload to bucket
         const file: any = fs.createReadStream(packageFile.path);
-        request
-          .attach("package", file)
-          .field("packageInfo", JSON.stringify(updateMetadata))
-          .on("progress", (event: any) => {
-            if (uploadProgressCallback && event && event.total > 0) {
-              const currentProgress: number = (event.loaded / event.total) * 100;
-              uploadProgressCallback(currentProgress);
-            }
-          })
-          .end((err: any, res: superagent.Response) => {
+        supabase.storage
+          .from("code_push")
+          .upload(new Date().toISOString(), file)
+          .then((res) => {
             if (packageFile.isTemporary) {
               fs.unlinkSync(packageFile.path);
             }
 
-            if (err) {
-              reject(this.getCodePushError(err, res));
+            const fsStat = fs.statSync(packageFile.path);
+
+            if (res.error) {
+              console.error(res.error);
               return;
             }
-
-            if (res.ok) {
-              resolve(<void>null);
-            } else {
-              let body;
-              try {
-                body = JSON.parse(res.text);
-              } catch (err) {}
-
-              if (body) {
-                reject(<CodePushError>{
-                  message: body.message,
-                  statusCode: res && res.status,
+            if (res.data) {
+              // insert a new package
+              supabase
+                .from("code_push_package")
+                .insert({
+                  app_name: appName,
+                  deployment_name: deploymentName,
+                  app_version: updateMetadata.appVersion,
+                  blob_url: res.data.fullPath,
+                  is_diabled: updateMetadata.isDisabled,
+                  is_mandatory: updateMetadata.isMandatory,
+                  label: updateMetadata.label,
+                  package_hash: updateMetadata.packageHash,
+                  rollout: updateMetadata.rollout,
+                  size: fsStat.size,
+                })
+                .then(() => {
+                  console.log("Upload Success");
                 });
-              } else {
-                reject(<CodePushError>{
-                  message: res.text,
-                  statusCode: res && res.status,
-                });
-              }
             }
           });
       });
     });
   }
 
+  /**
+   * @deprecated
+   * @param appName
+   * @param deploymentName
+   * @param label
+   * @param updateMetadata
+   * @returns
+   */
   public patchRelease(appName: string, deploymentName: string, label: string, updateMetadata: PackageInfo): Promise<void> {
     updateMetadata.label = label;
     const requestBody: string = JSON.stringify({ packageInfo: updateMetadata });
@@ -377,6 +557,15 @@ class AccountManager {
     ).then(() => null);
   }
 
+  /**
+   *
+   * @deprecated
+   * @param appName
+   * @param sourceDeploymentName
+   * @param destinationDeploymentName
+   * @param updateMetadata
+   * @returns
+   */
   public promote(
     appName: string,
     sourceDeploymentName: string,
@@ -391,6 +580,13 @@ class AccountManager {
     ).then(() => null);
   }
 
+  /**
+   * @deprecated
+   * @param appName
+   * @param deploymentName
+   * @param targetRelease
+   * @returns
+   */
   public rollback(appName: string, deploymentName: string, targetRelease?: string): Promise<void> {
     return this.post(
       urlEncode([`/apps/${appName}/deployments/${deploymentName}/rollback/${targetRelease || ``}`]),
