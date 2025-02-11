@@ -30,9 +30,7 @@ import {
 
 const packageJson = require("../../package.json");
 
-import { createClient, PostgrestResponse, PostgrestSingleResponse } from "@supabase/supabase-js";
-
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {});
+import { createClient, SupabaseClient, PostgrestResponse, PostgrestSingleResponse } from "@supabase/supabase-js";
 
 interface JsonResponse {
   headers: Headers;
@@ -75,6 +73,7 @@ class AccountManager {
   private _accessKey: string;
   private _serverUrl: string;
   private _customHeaders: Headers;
+  private _supabase: SupabaseClient;
 
   constructor(accessKey: string, customHeaders?: Headers, serverUrl?: string) {
     // if (!accessKey) throw new Error("An access key must be specified.");
@@ -82,6 +81,7 @@ class AccountManager {
     this._accessKey = accessKey;
     this._customHeaders = customHeaders;
     this._serverUrl = serverUrl || AccountManager.SERVER_URL;
+    this._supabase = createClient(this._serverUrl, this._accessKey, {});
   }
 
   public get accessKey(): string {
@@ -251,13 +251,14 @@ class AccountManager {
   // Apps
   public getApps(): Promise<App[]> {
     return Q(
-      supabase
+      this._supabase
         .from("code_push_app")
-        .select(`app_name: name,`)
+        .select(`app_name`)
         .then((res: PostgrestResponse<{ app_name: string }>) => {
           return res.data?.map((r) => {
             return {
               name: r.app_name,
+              deployments: [],
             } as App;
           });
         })
@@ -266,11 +267,11 @@ class AccountManager {
 
   public getApp(appName: string): Promise<App> {
     return Q(
-      supabase
+      this._supabase
         .from("code_push_app")
         .select(
           `
-       app_name: name,
+       app_name,
       `
         )
         .eq("app_name", appName)
@@ -285,17 +286,16 @@ class AccountManager {
 
   public addApp(appName: string): Promise<App> {
     return Q(
-      supabase
+      this._supabase
         .from("code_push_app")
-        .insert([
-          {
-            app_name: appName,
-          },
-        ])
-        .select()
-        .then((res: PostgrestSingleResponse<{ app_name: string }[]>) => {
+        .insert({
+          app_name: appName,
+        })
+        .select(`app_name`)
+        .single()
+        .then((res: PostgrestSingleResponse<{ app_name: string }>) => {
           return {
-            name: res[0].app_name,
+            name: res.data.app_name,
           } as App;
         })
     );
@@ -303,7 +303,7 @@ class AccountManager {
 
   public removeApp(appName: string): Promise<void> {
     return Q(
-      supabase
+      this._supabase
         .from("code_push_app")
         .delete()
         .eq("app_name", appName)
@@ -367,16 +367,17 @@ class AccountManager {
     // get app
     return this.getApp(appName).then((app) => {
       return Q(
-        supabase
+        this._supabase
           .from("code_push_deployments")
-          .insert([
+          .insert(
             {
               app_name: app.name,
               name: deploymentName,
               key: deploymentKey,
             },
-          ])
-          .select()
+          )
+          .select(`*`)
+          .single()
           .then((res) => {
             return {
               name: deploymentName,
@@ -399,7 +400,7 @@ class AccountManager {
 
   public getDeployments(appName: string): Promise<Deployment[]> {
     return Q(
-      supabase
+      this._supabase
         .from("code_push_deployments")
         .select(`app_name,name,key`)
         .eq("app_name", appName)
@@ -416,7 +417,7 @@ class AccountManager {
 
   public getDeployment(appName: string, deploymentName: string): Promise<Deployment> {
     return Q(
-      supabase
+      this._supabase
         .from("code_push_app")
         .select(`name, key`)
         .eq("app_name", appName)
@@ -499,39 +500,44 @@ class AccountManager {
 
       getPackageFilePromise.then((packageFile: PackageFile) => {
         // upload to bucket
-        const file: any = fs.createReadStream(packageFile.path);
-        supabase.storage
+        console.log("package info:", packageFile)
+        const file = fs.readFileSync(packageFile.path);
+        const newPath = deploymentName + '_' + new Date().toISOString() + '.zip'
+        this._supabase.storage
           .from("code_push")
-          .upload(new Date().toISOString(), file)
+          .upload(newPath, file)
           .then((res) => {
+            console.log("supabase storage upload result:", res)
+            const fsStat = fs.statSync(packageFile.path);
             if (packageFile.isTemporary) {
               fs.unlinkSync(packageFile.path);
             }
-
-            const fsStat = fs.statSync(packageFile.path);
 
             if (res.error) {
               console.error(res.error);
               return;
             }
+
             if (res.data) {
               // insert a new package
-              supabase
+              this._supabase
                 .from("code_push_package")
                 .insert({
                   app_name: appName,
                   deployment_name: deploymentName,
                   app_version: updateMetadata.appVersion,
                   blob_url: res.data.fullPath,
-                  is_diabled: updateMetadata.isDisabled,
+                  is_disabled: updateMetadata.isDisabled,
                   is_mandatory: updateMetadata.isMandatory,
                   label: updateMetadata.label,
                   package_hash: updateMetadata.packageHash,
                   rollout: updateMetadata.rollout,
                   size: fsStat.size,
                 })
-                .then(() => {
-                  console.log("Upload Success");
+                .select(`*`)
+                .single()
+                .then((res) => {
+                  console.log("Upload Success:", res);
                 });
             }
           });
