@@ -8,7 +8,7 @@ We announced that Visual Studio App Center will be retired on March 31, 2025. Yo
 ## Getting Started
 
 ### CodePush Server
-
+- Deprecated: Use Supabase Insteadof
 The CodePush server, located in the `api` subdirectory, allows developers to build, deploy and manage CodePush updates themselves.
 For detailed information about the CodePush server, including installation instructions and usage details, please refer to the [CodePush Server README](./api/README.md).
 

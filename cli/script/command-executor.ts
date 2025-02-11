@@ -176,14 +176,16 @@ function accessKeyRemove(command: cli.IAccessKeyRemoveCommand): Promise<void> {
 
 function appAdd(command: cli.IAppAddCommand): Promise<void> {
   return sdk.addApp(command.appName).then((app: App): Promise<void> => {
-    log('Successfully added the "' + command.appName + '" app, along with the following default deployments:');
-    const deploymentListCommand: cli.IDeploymentListCommand = {
-      type: cli.CommandType.deploymentList,
-      appName: app.name,
-      format: "table",
-      displayKeys: true,
-    };
-    return deploymentList(deploymentListCommand, /*showPackage=*/ false);
+    log('Successfully added the "' + command.appName + '" app');
+    // log('Successfully added the "' + command.appName + '" app, along with the following default deployments:');
+    // const deploymentListCommand: cli.IDeploymentListCommand = {
+    //   type: cli.CommandType.deploymentList,
+    //   appName: app.name,
+    //   format: "table",
+    //   displayKeys: true,
+    // };
+    // return deploymentList(deploymentListCommand, /*showPackage=*/ false);
+    return 
   });
 }
 
@@ -411,21 +413,24 @@ function deploymentHistory(command: cli.IDeploymentHistoryCommand): Promise<void
 
 function deserializeConnectionInfo(): ILoginConnectionInfo {
   try {
-    const savedConnection: string = fs.readFileSync(configFilePath, {
-      encoding: "utf8",
-    });
-    let connectionInfo: ILegacyLoginConnectionInfo | ILoginConnectionInfo = JSON.parse(savedConnection);
+    // const savedConnection: string = fs.readFileSync(configFilePath, {
+    //   encoding: "utf8",
+    // });
+    // let connectionInfo: ILegacyLoginConnectionInfo | ILoginConnectionInfo = JSON.parse(savedConnection);
 
-    // If the connection info is in the legacy format, convert it to the modern format
-    if ((<ILegacyLoginConnectionInfo>connectionInfo).accessKeyName) {
-      connectionInfo = <ILoginConnectionInfo>{
-        accessKey: (<ILegacyLoginConnectionInfo>connectionInfo).accessKeyName,
-      };
-    }
+    // // If the connection info is in the legacy format, convert it to the modern format
+    // if ((<ILegacyLoginConnectionInfo>connectionInfo).accessKeyName) {
+    //   connectionInfo = <ILoginConnectionInfo>{
+    //     accessKey: (<ILegacyLoginConnectionInfo>connectionInfo).accessKeyName,
+    //   };
+    // }
 
-    const connInfo = <ILoginConnectionInfo>connectionInfo;
+    // const connInfo = <ILoginConnectionInfo>connectionInfo;
 
-    return connInfo;
+    return <ILoginConnectionInfo>{
+      accessKey: process.env.SUPABASE_ANON_KEY,
+      customServerUrl: process.env.SUPABASE_URL
+    };
   } catch (ex) {
     return;
   }
@@ -1307,6 +1312,8 @@ export const releaseReact = (command: cli.IReleaseReactCommand): Promise<void> =
           );
         }
 
+        console.log("projectName:",projectName)
+
         if (!entryFile) {
           entryFile = `index.${platform}.js`;
           if (fileDoesNotExistOrIsDirectory(entryFile)) {
@@ -1322,6 +1329,8 @@ export const releaseReact = (command: cli.IReleaseReactCommand): Promise<void> =
           }
         }
 
+        console.log("entryFile:", entryFile)
+
         const appVersionPromise: Promise<string> = command.appStoreVersion
           ? Q(command.appStoreVersion)
           : getReactNativeProjectAppVersion(command, projectName);
@@ -1333,6 +1342,7 @@ export const releaseReact = (command: cli.IReleaseReactCommand): Promise<void> =
         return appVersionPromise;
       })
       .then((appVersion: string) => {
+        console.log("app version:", appVersion)
         throwForInvalidSemverRange(appVersion);
         releaseCommand.appStoreVersion = appVersion;
 
@@ -1356,7 +1366,7 @@ export const releaseReact = (command: cli.IReleaseReactCommand): Promise<void> =
         command.useHermes ||
         (platform === "android" && (await getAndroidHermesEnabled(command.gradleFile))) || // Check if we have to run hermes to compile JS to Byte Code if Hermes is enabled in build.gradle and we're releasing an Android build
         (platform === "ios" && (await getiOSHermesEnabled(command.podFile))); // Check if we have to run hermes to compile JS to Byte Code if Hermes is enabled in Podfile and we're releasing an iOS build
-
+        console.log("isHermesEnabled", isHermesEnabled)
         if (isHermesEnabled) {
           log(chalk.cyan("\nRunning hermes compiler...\n"));
           await runHermesEmitBinaryCommand(
@@ -1386,6 +1396,7 @@ export const releaseReact = (command: cli.IReleaseReactCommand): Promise<void> =
         }
       })
       .catch((err: Error) => {
+        console.error(err)
         deleteFolder(outputFolder);
         throw err;
       })
