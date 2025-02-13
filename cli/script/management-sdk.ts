@@ -11,7 +11,6 @@ import * as yazl from "yazl";
 import slash = require("slash");
 import * as hashUtils from "./hash-utils";
 
-import PackageManifest = hashUtils.PackageManifest;
 import Promise = Q.Promise;
 
 import {
@@ -418,7 +417,7 @@ class AccountManager {
   public getDeployment(appName: string, deploymentName: string): Promise<Deployment> {
     return Q(
       this._supabase
-        .from("code_push_app")
+        .from("code_push_deployments")
         .select(`name, key`)
         .eq("app_name", appName)
         .eq("name", deploymentName)
@@ -472,14 +471,20 @@ class AccountManager {
         .select(
           `
             blobUrl:blob_url,
-            uploadTime: created_at
-            size:size
+            created_at,
+            size
         `
         )
         .eq("deployment_name", deploymentName)
         .eq("app_name", appName)
-        .then((res: PostgrestResponse<Package>) => {
-          return res.data;
+        .then((res: PostgrestResponse<{blobUrl:string,size: number, created_at: number }>) => {
+          return res.data?.map( d => {
+            return {
+              blobUrl: d.blobUrl,
+              uploadTime: d.created_at,
+              size: d.size
+            } as Package
+          } );
         })
     );
   }
@@ -506,11 +511,10 @@ class AccountManager {
       });
 
       getPackageFilePromise.then((packageFile: PackageFile) => {
+        console.log("package info:", packageFile);
+        const file = fs.readFileSync(packageFile.path);
         this.getDeployment(appName, deploymentName)
           .then((dep) => {
-            // upload to bucket
-            console.log("package info:", packageFile);
-            const file = fs.readFileSync(packageFile.path);
             const newPath = deploymentName + "_" + new Date().toISOString() + ".zip";
             // manifest path
             hashUtils.hashFile(packageFile.path).then((hash: string) => {
@@ -533,6 +537,7 @@ class AccountManager {
                     }
 
                     if (res.data) {
+                      const publicUrl = this._supabase.storage.from("code_push").getPublicUrl(res.data.fullPath)
                       // insert a new package
                       this._supabase
                         .from("code_push_package")
@@ -541,7 +546,7 @@ class AccountManager {
                           deployment_name: deploymentName,
                           deployment_key: dep.key,
                           app_version: updateMetadata.appVersion,
-                          blob_url: res.data.fullPath,
+                          blob_url: publicUrl.data.publicUrl,
                           is_disabled: updateMetadata.isDisabled,
                           is_mandatory: updateMetadata.isMandatory,
                           label: updateMetadata.label,

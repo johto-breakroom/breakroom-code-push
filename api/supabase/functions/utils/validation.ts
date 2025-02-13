@@ -1,14 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { ALLOWED_KEY_CHARACTERS_TEST } from "./security";
-import * as storageTypes from "../storage/storage";
-import * as restTypes from "../types/rest-definitions";
+import * as storageTypes from "../types/storage.ts";
+import * as restTypes from "../types/rest-definitions.ts";
 import * as semver from "semver";
 
-import emailValidator = require("email-validator");
-
-module Validation {
   function getStringValidator(maxLength: number = 1000, minLength: number = 0): (value: any) => boolean {
     return function isValidString(value: string): boolean {
       if (typeof value !== "string") {
@@ -39,25 +35,9 @@ module Validation {
     return val && val.match(/^v[1-9][0-9]*$/) !== null; //validates if label field confirms to 'v1-v9999...' standard
   }
 
-  function isValidEmailField(email: any): boolean {
-    return (
-      getStringValidator(/*maxLength=*/ 255, /*minLength=*/ 1)(email) &&
-      emailValidator.validate(email) &&
-      !/[\\\/\?]/.test(email) && // Forbid URL special characters until #374 is resolved
-      !/[\x00-\x1F]/.test(email) && // Control characters
-      !/[\x7F-\x9F]/.test(email) &&
-      !/#/.test(email) && // The Azure Storage library forbids this in PartitionKeys (in addition to the above)
-      !/[ \*]/.test(email) && // Our storage layer currently forbids these characters in PartitionKeys
-      !/:/.test(email)
-    ); // Forbid colon because we use it as a delimiter for qualified app names
-  }
-
-  function isValidTtlField(allowZero: boolean, val: number): boolean {
-    return !isNaN(val) && val >= 0 && (val != 0 || allowZero);
-  }
 
   export function isValidKeyField(val: any): boolean {
-    return getStringValidator(/*maxLength=*/ 100, /*minLength=*/ 10)(val) && ALLOWED_KEY_CHARACTERS_TEST.test(val);
+    return getStringValidator(/*maxLength=*/ 100, /*minLength=*/ 10)(val);
   }
 
   function isValidNameField(name: any): boolean {
@@ -98,35 +78,7 @@ module Validation {
     return validate(updateCheckRequest, fields, requiredFields).length === 0;
   }
 
-  export function validateAccessKeyRequest(accessKey: restTypes.AccessKeyRequest, isUpdate: boolean): ValidationError[] {
-    const fields: FieldDefinition = {
-      friendlyName: isValidFriendlyNameField,
-      ttl: isValidTtlField.bind(/*thisArg*/ null, /*allowZero*/ isUpdate),
-    };
 
-    let requiredFields: string[] = [];
-    if (!isUpdate) {
-      fields["name"] = isValidKeyField;
-      requiredFields = ["name", "friendlyName"];
-    }
-
-    return validate(accessKey, fields, requiredFields);
-  }
-
-  export function validateAccount(account: restTypes.Account, isUpdate: boolean): ValidationError[] {
-    const fields: FieldDefinition = {
-      email: isValidEmailField,
-      name: getStringValidator(/*maxLength=*/ 1000, /*minLength=*/ 1),
-    };
-
-    let requiredFields: string[] = [];
-
-    if (!isUpdate) {
-      requiredFields = ["name"];
-    }
-
-    return validate(account, fields, requiredFields);
-  }
 
   export function validateApp(app: restTypes.App | storageTypes.App, isUpdate: boolean): ValidationError[] {
     const fields: FieldDefinition = {
@@ -204,6 +156,3 @@ module Validation {
   export function isDefined(val: any): boolean {
     return val !== null && val !== undefined;
   }
-}
-
-export = Validation;

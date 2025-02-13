@@ -1,0 +1,100 @@
+{
+  "version": "4",
+  "specifiers": {
+    "jsr:@hono/hono@^4.7.1": "4.7.1"
+  },
+  "jsr": {
+    "@hono/hono@4.7.1": {
+      "integrity": "f75aaf6a026ad05406e60125a70a3d2a77e3b62991f8c4e38c624bdfc1a1dc26"
+    }
+  },
+  "redirects": {
+    "https://esm.sh/@supabase/node-fetch@^2.6.14?target=denonext": "https://esm.sh/@supabase/node-fetch@2.6.15?target=denonext",
+    "https://esm.sh/bufferutil@^4.0.1?target=denonext": "https://esm.sh/bufferutil@4.0.9?target=denonext",
+    "https://esm.sh/node-gyp-build@^4.3.0?target=denonext": "https://esm.sh/node-gyp-build@4.8.4?target=denonext",
+    "https://esm.sh/tr46@~0.0.3?target=denonext": "https://esm.sh/tr46@0.0.3?target=denonext",
+    "https://esm.sh/utf-8-validate@%3E=5.0.2?target=denonext": "https://esm.sh/utf-8-validate@6.0.5?target=denonext",
+    "https://esm.sh/webidl-conversions@^3.0.0?target=denonext": "https://esm.sh/webidl-conversions@3.0.1?target=denonext",
+    "https://esm.sh/whatwg-url@^5.0.0?target=denonext": "https://esm.sh/whatwg-url@5.0.0?target=denonext",
+    "https://esm.sh/ws@^8.18.0?target=denonext": "https://esm.sh/ws@8.18.0?target=denonext"
+  },
+  "remote": {
+    "https://esm.sh/@supabase/auth-js@2.67.0/denonext/auth-js.mjs": "0a3c27f8c948b69abb6b2ca4e471867d6d32bb1e03f13badbf00385b590204eb",
+    "https://esm.sh/@supabase/functions-js@2.4.3/denonext/functions-js.mjs": "1dc3e89b1726a49855256f2a77f12d63aeeb506b5481d257e225333372cefe1f",
+    "https://esm.sh/@supabase/node-fetch@2.6.15/denonext/node-fetch.mjs": "0bae9052231f4f6dbccc7234d05ea96923dbf967be12f402764580b6bf9f713d",
+    "https://esm.sh/@supabase/node-fetch@2.6.15?target=denonext": "4d28c4ad97328403184353f68434f2b6973971507919e9150297413664919cf3",
+    "https://esm.sh/@supabase/postgrest-js@1.16.3/denonext/postgrest-js.mjs": "ef1f5a1c3f633a7ed97e19949ea817806470a6fb02cd02f78e2b1a0e38adfb2a",
+    "https://esm.sh/@supabase/realtime-js@2.11.2/denonext/realtime-js.mjs": "c33ac375b6be89c893f9df844d2525a4ace015a35aa6ba236270d00c6605c7ba",
+    "https://esm.sh/@supabase/storage-js@2.7.1/denonext/storage-js.mjs": "73ac8cdc95cfcd794fe603dbd7ce06d539ab51538ae6467eabe0f9cc26c993aa",
+    "https://esm.sh/@supabase/supabase-js@2.47.6": "52066e23e81b8ec360c4aee5967de84a506b3b21cd3f092787516d68e226dec3",
+    "https://esm.sh/@supabase/supabase-js@2.47.6/denonext/supabase-js.mjs": "e94e60973b22ec1cb9d386dbb85f0c0211c44f5dbc1ddc665796e41caf7cf4ad",
+    "https://esm.sh/bufferutil@4.0.9/denonext/bufferutil.mjs": "13dca4d5bb2c68cbe119f880fa3bd785b9a81a8e02e0834dae604b4b85295cd8",
+    "https://esm.sh/bufferutil@4.0.9?target=denonext": "e32574569ab438facfcc3f412c659b0719bbf05477136ca176938c9a3ac45125",
+    "https://esm.sh/node-gyp-build@4.8.4/denonext/node-gyp-build.mjs": "9a86f2d044fc77bd60aaa3d697c2ba1b818da5fb1b9aaeedec59a40b8e908803",
+    "https://esm.sh/node-gyp-build@4.8.4?target=denonext": "261a6cedf1fdbf159798141ba1e2311ac1510682c5c8b55dacc8cf5fdee4aa06",
+    "https://esm.sh/semver@7.7.1": "7d6e1f9de61981f17d0e5153d48b77475e3433225ce9265ad77206afe216c5c8",
+    "https://esm.sh/semver@7.7.1/denonext/semver.mjs": "f1d8c45a097d5f2da9662be5ff2087f1e4af9ebeb9b0c2eeeb0c90d74fa7a14c",
+    "https://esm.sh/tr46@0.0.3/denonext/tr46.mjs": "5753ec0a99414f4055f0c1f97691100f13d88e48a8443b00aebb90a512785fa2",
+    "https://esm.sh/tr46@0.0.3?target=denonext": "19cb9be0f0d418a0c3abb81f2df31f080e9540a04e43b0f699bce1149cba0cbb",
+    "https://esm.sh/utf-8-validate@6.0.5/denonext/utf-8-validate.mjs": "66b8ea532a0c745068f5b96ddb1bae332c3036703243541d2e89e66331974d98",
+    "https://esm.sh/utf-8-validate@6.0.5?target=denonext": "071bc33ba1a58297e23a34d69dd589fd06df04b0f373b382ff5da544a623f271",
+    "https://esm.sh/webidl-conversions@3.0.1/denonext/webidl-conversions.mjs": "54b5c2d50a294853c4ccebf9d5ed8988c94f4e24e463d84ec859a866ea5fafec",
+    "https://esm.sh/webidl-conversions@3.0.1?target=denonext": "4e20318d50528084616c79d7b3f6e7f0fe7b6d09013bd01b3974d7448d767e29",
+    "https://esm.sh/whatwg-url@5.0.0/denonext/whatwg-url.mjs": "29b16d74ee72624c915745bbd25b617cfd2248c6af0f5120d131e232a9a9af79",
+    "https://esm.sh/whatwg-url@5.0.0?target=denonext": "f001a2cadf81312d214ca330033f474e74d81a003e21e8c5d70a1f46dc97b02d",
+    "https://esm.sh/ws@8.18.0/denonext/ws.mjs": "8dc628278869d8802a2740beaa6f122b2e159d05d85746cdd647a3d3ffdd3e19",
+    "https://esm.sh/ws@8.18.0?target=denonext": "6c20bf923e7287b70e706eb731195e073f7693a9c89d050aceb7cc51804865d4"
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@azure/data-tables@^13.2.2",
+        "npm:@azure/identity@^4.2.1",
+        "npm:@azure/keyvault-secrets@^4.7.0",
+        "npm:@azure/storage-blob@^12.14.0",
+        "npm:@azure/storage-queue@^12.13.0",
+        "npm:@types/express@^4.17.17",
+        "npm:@types/jest@^29.5.1",
+        "npm:@types/mocha@^10.0.1",
+        "npm:@types/multer@^1.4.7",
+        "npm:@types/node@^20.1.4",
+        "npm:@types/q@^1.5.5",
+        "npm:@typescript-eslint/eslint-plugin@6",
+        "npm:@typescript-eslint/parser@6",
+        "npm:applicationinsights@^2.7.0",
+        "npm:body-parser@^1.20.2",
+        "npm:cookie-session@2",
+        "npm:dotenv@^16.0.3",
+        "npm:ejs@^3.1.10",
+        "npm:email-validator@1.0.3",
+        "npm:eslint@^8.45.0",
+        "npm:express-domain-middleware@0.1.0",
+        "npm:express-rate-limit@^7.4.0",
+        "npm:express@^4.21.2",
+        "npm:multer@^1.4.5-lts.1",
+        "npm:node-deepcopy@0.1.1",
+        "npm:passport-azure-ad@^4.3.5",
+        "npm:passport-github2@0.1.9",
+        "npm:passport-http-bearer@1.0.1",
+        "npm:passport-windowslive@1.0.1",
+        "npm:passport@0.6",
+        "npm:prettier@^2.8.8",
+        "npm:q@^1.4.1",
+        "npm:redis@2.4.2",
+        "npm:rimraf@^5.0.1",
+        "npm:sanitize-html@^2.11.0",
+        "npm:semver@^7.5.3",
+        "npm:shortid@2.2.2",
+        "npm:shx@~0.3.4",
+        "npm:stream-to-array@^2.3.0",
+        "npm:streamifier@0.1.1",
+        "npm:superagent@^8.0.9",
+        "npm:supertest@^6.3.3",
+        "npm:try-json@1.0.0",
+        "npm:typescript@^5.0.4",
+        "npm:yauzl@2.6.0",
+        "npm:yazl@2.2.2"
+      ]
+    }
+  }
+}

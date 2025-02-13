@@ -148,5 +148,3 @@ export interface Package extends PackageInfo {
   /*generated*/ size: number;
   /*generated*/ uploadTime: number;
 }
-
-export * from "./rest-definitions";
