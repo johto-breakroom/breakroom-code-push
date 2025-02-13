@@ -9,7 +9,9 @@ import superagent = require("superagent");
 import * as recursiveFs from "recursive-fs";
 import * as yazl from "yazl";
 import slash = require("slash");
+import * as hashUtils from "./hash-utils";
 
+import PackageManifest = hashUtils.PackageManifest;
 import Promise = Q.Promise;
 
 import {
@@ -369,13 +371,11 @@ class AccountManager {
       return Q(
         this._supabase
           .from("code_push_deployments")
-          .insert(
-            {
-              app_name: app.name,
-              name: deploymentName,
-              key: deploymentKey,
-            },
-          )
+          .insert({
+            app_name: app.name,
+            name: deploymentName,
+            key: deploymentKey,
+          })
           .select(`*`)
           .single()
           .then((res) => {
@@ -465,15 +465,22 @@ class AccountManager {
     );
   }
 
-  /**
-   * @deprecated
-   * @param appName
-   * @param deploymentName
-   * @returns
-   */
   public getDeploymentHistory(appName: string, deploymentName: string): Promise<Package[]> {
-    return this.get(urlEncode([`/apps/${appName}/deployments/${deploymentName}/history`])).then(
-      (res: JsonResponse) => res.body.history
+    return Q(
+      this._supabase
+        .from("code_push_package")
+        .select(
+          `
+            blobUrl:blob_url,
+            uploadTime: created_at
+            size:size
+        `
+        )
+        .eq("deployment_name", deploymentName)
+        .eq("app_name", appName)
+        .then((res: PostgrestResponse<Package>) => {
+          return res.data;
+        })
     );
   }
 
@@ -499,48 +506,60 @@ class AccountManager {
       });
 
       getPackageFilePromise.then((packageFile: PackageFile) => {
-        // upload to bucket
-        console.log("package info:", packageFile)
-        const file = fs.readFileSync(packageFile.path);
-        const newPath = deploymentName + '_' + new Date().toISOString() + '.zip'
-        this._supabase.storage
-          .from("code_push")
-          .upload(newPath, file)
-          .then((res) => {
-            console.log("supabase storage upload result:", res)
-            const fsStat = fs.statSync(packageFile.path);
-            if (packageFile.isTemporary) {
-              fs.unlinkSync(packageFile.path);
-            }
+        this.getDeployment(appName, deploymentName)
+          .then((dep) => {
+            // upload to bucket
+            console.log("package info:", packageFile);
+            const file = fs.readFileSync(packageFile.path);
+            const newPath = deploymentName + "_" + new Date().toISOString() + ".zip";
+            // manifest path
+            hashUtils.hashFile(packageFile.path).then((hash: string) => {
+              updateMetadata.packageHash = hash;
+              this.getDeploymentHistory(appName, deploymentName).then((history: Package[]) => {
+                updateMetadata.label = `v${history.length + 1}`;
+                this._supabase.storage
+                  .from("code_push")
+                  .upload(newPath, file)
+                  .then((res) => {
+                    console.log("supabase storage upload result:", res);
+                    const fsStat = fs.statSync(packageFile.path);
+                    if (packageFile.isTemporary) {
+                      fs.unlinkSync(packageFile.path);
+                    }
 
-            if (res.error) {
-              console.error(res.error);
-              return;
-            }
+                    if (res.error) {
+                      console.error(res.error);
+                      return;
+                    }
 
-            if (res.data) {
-              // insert a new package
-              this._supabase
-                .from("code_push_package")
-                .insert({
-                  app_name: appName,
-                  deployment_name: deploymentName,
-                  app_version: updateMetadata.appVersion,
-                  blob_url: res.data.fullPath,
-                  is_disabled: updateMetadata.isDisabled,
-                  is_mandatory: updateMetadata.isMandatory,
-                  label: updateMetadata.label,
-                  package_hash: updateMetadata.packageHash,
-                  rollout: updateMetadata.rollout,
-                  size: fsStat.size,
-                })
-                .select(`*`)
-                .single()
-                .then((res) => {
-                  console.log("Upload Success:", res);
-                });
-            }
-          });
+                    if (res.data) {
+                      // insert a new package
+                      this._supabase
+                        .from("code_push_package")
+                        .insert({
+                          app_name: appName,
+                          deployment_name: deploymentName,
+                          deployment_key: dep.key,
+                          app_version: updateMetadata.appVersion,
+                          blob_url: res.data.fullPath,
+                          is_disabled: updateMetadata.isDisabled,
+                          is_mandatory: updateMetadata.isMandatory,
+                          label: updateMetadata.label,
+                          package_hash: updateMetadata.packageHash,
+                          rollout: updateMetadata.rollout === 100 ? null : updateMetadata.rollout,
+                          size: fsStat.size,
+                        })
+                        .select(`*`)
+                        .single()
+                        .then((res) => {
+                          console.log("Upload Success:", res);
+                        });
+                    }
+                  });
+              });
+            });
+          })
+          .done();
       });
     });
   }
