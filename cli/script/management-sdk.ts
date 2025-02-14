@@ -537,7 +537,7 @@ class AccountManager {
                     }
 
                     if (res.data) {
-                      const publicUrl = this._supabase.storage.from("code_push").getPublicUrl(res.data.fullPath)
+                      const publicUrl = this._supabase.storage.from("code_push").getPublicUrl(res.data.path)
                       // insert a new package
                       this._supabase
                         .from("code_push_package")

@@ -23,6 +23,7 @@ const updateCheck = async ( c: any ) => {
       const packageHash: string = String(c.req.query("packageHash") || c.req.query("package_hash"));
       const isCompanion: string = String(c.req.query("isCompanion") || c.req.query("is_companion"));
     
+      console.log("deploymentKey", deploymentKey, "appVersion", appVersion, "packageHash", packageHash, "label", c.req.query("label"))
       const updateRequest: UpdateCheckRequest = {
         deploymentKey: deploymentKey,
         appVersion: appVersion,
@@ -83,7 +84,8 @@ const updateCheck = async ( c: any ) => {
             manifestBlobUrl:manifest_blob_url,
             packageHash:package_hash,
             rollout,
-            size
+            size,
+            label
         `)
         .eq('deployment_key', updateRequest.deploymentKey)
         .order('created_at', {ascending: true})
@@ -133,6 +135,7 @@ const updateCheck = async ( c: any ) => {
     }
 
     const body = await c.req.json()
+    console.log('report deploy' ,body)
     const deploymentKey = body.deploymentKey || body.deployment_key;
     const appVersion = body.appVersion || body.app_version;
     const clientUniqueId = body.clientUniqueId || body.client_unique_id;
@@ -161,11 +164,12 @@ const updateCheck = async ( c: any ) => {
       }});
     }
     const body = await c.req.json()
+    console.log('report download' ,body)
     const deploymentKey = body.deploymentKey || body.deployment_key;
-    if (!body || !deploymentKey || !body.label) {
+    if (!body || !deploymentKey) {
       return new Response('A download status report must contain a valid deploymentKey and package label.', {status: 400})
     }
-    console.log("deploymentKey download", deploymentKey)
+    console.log("deploymentKey download", deploymentKey, body.label)
 
     return new Response('OK', {status: 200})
   };
