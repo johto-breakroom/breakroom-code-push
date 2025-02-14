@@ -120,7 +120,7 @@ const updateCheck = async ( c: any ) => {
     };
 
 
-  const reportStatusDeploy = (c: any) => {
+  const reportStatusDeploy = async (c: any) => {
     if (c.req.method === 'OPTIONS') {
       return new Response('ok', {status: 204, headers: {
         'Access-Control-Allow-Origin': '*',
@@ -129,25 +129,27 @@ const updateCheck = async ( c: any ) => {
         "Cache-Control": "no-cache"
       }});
     }
-    const deploymentKey = c.req.body.deploymentKey || c.req.body.deployment_key;
-    const appVersion = c.req.body.appVersion || c.req.body.app_version;
-    const clientUniqueId = c.req.body.clientUniqueId || c.req.body.client_unique_id;
+
+    const body = await c.req.json()
+    const deploymentKey = body.deploymentKey || body.deployment_key;
+    const appVersion = body.appVersion || body.app_version;
+    const clientUniqueId = body.clientUniqueId || body.client_unique_id;
 
     if (!deploymentKey || !appVersion) {
       return new Response('A deploy status report must contain a valid appVersion and deploymentKey.', {status: 400})
-    } else if (c.req.body.label) {
-      if (!c.req.body.status) {
+    } else if (body.label) {
+      if (!body.status) {
         return new Response('A deploy status report for a labelled package must contain a valid status.', {status: 400})
-      } else if (!utils.isValidDeploymentStatus(c.req.body.status)) {
-        return new Response("Invalid status: " + c.req.body.status, {status: 400})
+      } else if (!utils.isValidDeploymentStatus(body.status)) {
+        return new Response("Invalid status: " + body.status, {status: 400})
       }
     }
 
-    console.log("reportStatusDeploy:", deploymentKey, clientUniqueId, appVersion, c.req.body.label, c.req.body.status)
+    console.log("reportStatusDeploy:", deploymentKey, clientUniqueId, appVersion, body.label, body.status)
     return new Response('OK', {status: 200})
   };
 
-  const reportStatusDownload = (c: any) => {
+  const reportStatusDownload = async (c: any) => {
     if (c.req.method === 'OPTIONS') {
       return new Response('ok', {status: 204, headers: {
         'Access-Control-Allow-Origin': '*',
@@ -156,8 +158,9 @@ const updateCheck = async ( c: any ) => {
         "Cache-Control": "no-cache"
       }});
     }
-    const deploymentKey = c.req.body.deploymentKey || c.req.body.deployment_key;
-    if (!c.req.body || !deploymentKey || !c.req.body.label) {
+    const body = await c.req.json()
+    const deploymentKey = body.deploymentKey || body.deployment_key;
+    if (!body || !deploymentKey || !body.label) {
       return new Response('A download status report must contain a valid deploymentKey and package label.', {status: 400})
     }
     console.log("deploymentKey download", deploymentKey)
