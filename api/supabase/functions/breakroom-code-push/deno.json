@@ -1,7 +1,6 @@
 {
   "imports": {
     "@hono/hono": "jsr:@hono/hono@^4.7.1",
-    "semver": "https://esm.sh/semver@7.7.1",
     "@supabase/supabase": "https://esm.sh/@supabase/supabase-js@2.47.6"
   }
 }
