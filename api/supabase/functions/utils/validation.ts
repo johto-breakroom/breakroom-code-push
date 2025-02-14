@@ -3,7 +3,7 @@
 
 import * as storageTypes from "../types/storage.ts";
 import * as restTypes from "../types/rest-definitions.ts";
-import * as semver from "semver";
+import * as semver from "https://esm.sh/semver@7.7.1";
 
   function getStringValidator(maxLength: number = 1000, minLength: number = 0): (value: any) => boolean {
     return function isValidString(value: string): boolean {
