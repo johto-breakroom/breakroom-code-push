@@ -17,22 +17,21 @@ const app = new Hono().basePath(`/${functionName}`)
 
 
 const updateCheck = async ( c: any ) => {
-      const clientUniqueId: string = String(c.req.query.clientUniqueId || c.req.query.client_unique_id);
-      const deploymentKey: string = String(c.req.query.deploymentKey || c.req.query.deployment_key);
-      const appVersion: string = String(c.req.query.appVersion || c.req.query.app_version);
-      const packageHash: string = String(c.req.query.packageHash || c.req.query.package_hash);
-      const isCompanion: string = String(c.req.query.isCompanion || c.req.query.is_companion);
+      const clientUniqueId: string = String(c.req.query("clientUniqueId") || c.req.query("client_unique_id"));
+      const deploymentKey: string = String(c.req.query("deploymentKey") || c.req.query("deployment_key"));
+      const appVersion: string = String(c.req.query("appVersion") || c.req.query("app_version"));
+      const packageHash: string = String(c.req.query("packageHash") || c.req.query("package_hash"));
+      const isCompanion: string = String(c.req.query("isCompanion") || c.req.query("is_companion"));
     
       const updateRequest: UpdateCheckRequest = {
         deploymentKey: deploymentKey,
         appVersion: appVersion,
         packageHash: packageHash,
         isCompanion: isCompanion && isCompanion.toLowerCase() === "true",
-        label: String(c.req.query.label),
+        label: String(c.req.query("label")),
       };
     
       let originalAppVersion: string;
-    
       // Make an exception to allow plain integer numbers e.g. "1", "2" etc.
       const isPlainIntegerNumber: boolean = /^\d+$/.test(updateRequest.appVersion);
       if (isPlainIntegerNumber) {
@@ -78,16 +77,19 @@ const updateCheck = async ( c: any ) => {
         .select(`
             appVersion:app_version,
             blobUrl:blob_url,
-            description:description,
-            isDisabled: is_disabled,
+            description,
+            isDisabled:is_disabled,
             isMandatory:is_mandatory,
-            manifestBlobUrl: manifest_blob_url,
-            packageHash: package_hash.
-            rollout:rollout,
-            size:size
+            manifestBlobUrl:manifest_blob_url,
+            packageHash:package_hash,
+            rollout,
+            size
         `)
         .eq('deployment_key', updateRequest.deploymentKey)
-      console.log(packageHistory)
+        .order('created_at', {ascending: true})
+      if (error) {
+        return new Response(JSON.stringify(error), {status: 500})
+      }
 
       const updateObject: UpdateCheckCacheResponse = acquisitionUtils.getUpdatePackageInfo(packageHistory, updateRequest);
         if ((isMissingPatchVersion || isPlainIntegerNumber) && updateObject.originalPackage.appVersion === updateRequest.appVersion) {
