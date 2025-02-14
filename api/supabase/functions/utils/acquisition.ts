@@ -2,9 +2,9 @@
 // Licensed under the MIT License.
 
 import * as semver from "semver";
-import { UpdateCheckCacheResponse, UpdateCheckRequest, UpdateCheckResponse } from "../types/rest-definitions";
-import { Package } from "../storage/storage";
-import { isUnfinishedRollout } from "./rollout-selector";
+import { UpdateCheckCacheResponse, UpdateCheckRequest, UpdateCheckResponse } from "../types/rest-definitions.ts";
+import { Package } from "../types/storage.ts";
+import { isUnfinishedRollout } from "./rollout-selector.ts";
 
 interface UpdatePackage {
   response: UpdateCheckResponse;
@@ -71,6 +71,7 @@ function getUpdatePackage(packageHistory: Package[], request: UpdateCheckRequest
     }
 
     latestEnabledPackage = latestEnabledPackage || packageEntry;
+    // semver.satisfies('1.2.3', '1.x || >=2.5.0 || 5.0.0 - 7.2.3') // true
     if (!request.isCompanion && !semver.satisfies(request.appVersion, packageEntry.appVersion)) {
       continue;
     }
