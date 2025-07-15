@@ -72,7 +72,7 @@ function getUpdatePackage(packageHistory: Package[], request: UpdateCheckRequest
 
     latestEnabledPackage = latestEnabledPackage || packageEntry;
     // semver.satisfies('1.2.3', '1.x || >=2.5.0 || 5.0.0 - 7.2.3') // true
-    if (!request.isCompanion && !semver.satisfies(request.appVersion, packageEntry.appVersion)) {
+    if (!request.isCompanion && !semver.satisfies(request.appVersion, "=" + packageEntry.appVersion)) {
       continue;
     }
 
